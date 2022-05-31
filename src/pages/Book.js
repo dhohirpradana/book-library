@@ -149,7 +149,7 @@ export default function Book() {
           filter(newInputValue);
         }}
         options={[...categories, ...books.map((book) => book.name)]}
-        sx={{ width: 300 }}
+        sx={{ width: 300, mb: 2 }}
         renderInput={(params) => <TextField {...params} label="Search" />}
       />
       <Paper sx={{ width: "100%", overflow: "hidden" }}>

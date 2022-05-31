@@ -17,7 +17,7 @@ export const graphFetch = function (query, variables) {
 
     const graphqlQuery = {
       query: query,
-      variables: { variables },
+      variables: variables,
     };
 
     API.post("/", graphqlQuery, config)
