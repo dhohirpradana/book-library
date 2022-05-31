@@ -3,12 +3,16 @@ import { Route, Routes, useNavigate } from "react-router-dom";
 import { Navigation } from "react-minimal-side-navigation";
 import "react-minimal-side-navigation/lib/ReactMinimalSideNavigation.css";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
-import EmailIcon from "@mui/icons-material/Email";
+import LibraryBooksIcon from "@mui/icons-material/LibraryBooks";
 import { Box, Stack } from "@mui/material";
 import Book from "./pages/Book";
-import { graphFetch, setAuthToken } from "./configs/api";
+import { graphRequest, setAuthToken } from "./configs/api";
 import { UserContext } from "./contexts/user";
 import Auth from "./pages/Auth";
+import BookAdd from "./pages/BookAdd";
+import ContactPageIcon from "@mui/icons-material/ContactPage";
+import ListIcon from "@mui/icons-material/List";
+import BookDetail from "./pages/BookDetail";
 
 if (localStorage.token) {
   setAuthToken(localStorage.token);
@@ -22,8 +26,9 @@ function App() {
   const [userContext, userDispatch] = useContext(UserContext);
 
   const checkUser = async () => {
-    await graphFetch(`{
+    await graphRequest(`{
       user {
+        id
         firstName
         lastName
         email
@@ -69,7 +74,7 @@ function App() {
             items={[
               {
                 title: "Book",
-                itemId: "/book",
+                itemId: "/books",
                 subNav: [
                   {
                     title: "Books",
@@ -88,26 +93,21 @@ function App() {
                     itemId: "/book/pinalties",
                   },
                 ],
-                elemBefore: () => <EmailIcon />,
+                elemBefore: () => <LibraryBooksIcon />,
               },
               {
-                title: "Member",
-                itemId: "/management",
-                elemBefore: () => <EmailIcon />,
-                subNav: [
-                  {
-                    title: "Projects",
-                    itemId: "/management/projects",
-                  },
-                  {
-                    title: "Members",
-                    itemId: "/management/members",
-                  },
-                ],
+                title: "Author",
+                itemId: "/author",
+                elemBefore: () => <ContactPageIcon />,
               },
               {
-                title: "User",
-                itemId: "/user",
+                title: "Category",
+                itemId: "/category",
+                elemBefore: () => <ListIcon />,
+              },
+              {
+                title: "Account",
+                itemId: "/account",
                 elemBefore: () => <AccountCircleIcon />,
               },
             ]}
@@ -116,9 +116,12 @@ function App() {
         <Box mx="auto" my={4}>
           <Routes>
             <Route exact path="/" element={<Book />} />
-            <Route exact path="/book" element={<Book />} />
+            <Route exact path="/books" element={<Book />} />
             <Route exact path="/book/books" element={<Book />} />
-            <Route exact path="/user" element={<Auth />} />
+            {/* <Route exact path="/member" element={<Member />} /> */}
+            <Route exact path="/account" element={<Auth />} />
+            <Route exact path="/book/add" element={<BookAdd />} />
+            <Route exact path="/book/:id" element={<BookDetail />} />
             {/* <Route
               exact
               path="/book-add"

@@ -10,7 +10,7 @@ import {
   Typography,
 } from "@mui/material";
 import React, { useContext, useEffect, useRef, useState } from "react";
-import { graphFetch } from "../configs/api";
+import { graphRequest } from "../configs/api";
 import { UserContext } from "../contexts/user";
 
 export default function Auth() {
@@ -20,11 +20,12 @@ export default function Auth() {
 
   const handleLogin = () => {
     seterror(null);
-    graphFetch(
+    graphRequest(
       `mutation($input: LoginInput) {
       login(input: $input) {
         token
         user {
+          id
           firstName
           lastName
           phoneNumber
@@ -92,9 +93,7 @@ export default function Auth() {
                   type="password"
                   defaultValue=""
                 />
-                <FormHelperText id="my-helper-text">
-                  {/* We'll never share your email. */}
-                </FormHelperText>
+                <FormHelperText id="my-helper-text"></FormHelperText>
               </FormControl>
               <Button variant="contained" onClick={handleLogin}>
                 Login

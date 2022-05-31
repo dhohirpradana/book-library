@@ -1,35 +1,25 @@
-import {
-  Autocomplete,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TablePagination,
-  TableRow,
-  TextField,
-} from "@mui/material";
-import React, { useEffect, useState } from "react";
-import { graphFetch } from "../configs/api";
+import { Autocomplete, Button, Paper, Stack, TextField } from "@mui/material";
+import { useEffect, useState } from "react";
+import { graphRequest } from "../configs/api";
+import { useNavigate } from "react-router-dom";
+import CollapsibleTable from "../components/CollapsibleTable";
 
 export default function Book() {
   const [books, setbooks] = useState([]);
-  const [filteredBooks, setfilteredBooks] = useState(books);
+  const [filteredBooks, setfilteredBooks] = useState([]);
   const [categories, setcategories] = useState([]);
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [inputValue, setInputValue] = React.useState("");
+  const [inputValue, setInputValue] = useState("");
+  const navigate = useNavigate();
 
   const filter = (value) => {
     setInputValue(value);
     let filteredBooks = books.filter(function (currentElement) {
       return (
         currentElement.name.toLowerCase().includes(value.toLowerCase()) ||
-        currentElement.category.toLowerCase() === value.toLowerCase()
+        currentElement.category.toLowerCase().includes(value.toLowerCase())
       );
     });
-    console.log(filteredBooks);
+    // console.log(filteredBooks);
     setfilteredBooks(filteredBooks);
   };
 
@@ -40,8 +30,10 @@ export default function Book() {
   }, []);
 
   const fetchBooks = async () => {
-    await graphFetch(`{
+    await graphRequest(`{
       books {
+        id
+        code
         name
         author {
           name
@@ -52,41 +44,49 @@ export default function Book() {
         category {
           name
         }
+        description
         status
       }
     }`)
       .then((res) => {
         setbooks([]);
+        setfilteredBooks([]);
         // eslint-disable-next-line array-callback-return
         res.data.books.map((book) => {
           setbooks((old) => [
             ...old,
             createData(
+              book.id,
+              book.code,
               book.name,
               book.author.name,
               book.rack.name,
               book.category.name,
-              book.status
+              book.status,
+              book.description
             ),
           ]);
           setfilteredBooks((old) => [
             ...old,
             createData(
+              book.id,
+              book.code,
               book.name,
               book.author.name,
               book.rack.name,
               book.category.name,
-              book.status
+              book.status,
+              book.description
             ),
           ]);
         });
-        // console.log(books);
+        console.log(books);
       })
       .catch((error) => console.log(error));
   };
 
-  const fetchCategories = async () => {
-    await graphFetch(`{
+  const fetchCategories = () => {
+    graphRequest(`{
       categories{name}
     }`)
       .then((res) => {
@@ -99,107 +99,60 @@ export default function Book() {
       .catch((error) => console.log(error));
   };
 
-  const handleChangePage = (event, newPage) => {
-    setPage(newPage);
-  };
-
-  const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(+event.target.value);
-    setPage(0);
-  };
-
-  const columns = [
-    { id: "name", label: "Name", minWidth: 170 },
-    { id: "author", label: "Author", minWidth: 100 },
-    {
-      id: "rack",
-      label: "Rack",
-      minWidth: 170,
-    },
-    {
-      id: "category",
-      label: "Category",
-      minWidth: 170,
-    },
-    {
-      id: "status",
-      label: "Status",
-      minWidth: 170,
-    },
-  ];
-
-  function createData(name, author, rack, category, status) {
+  function createData(
+    id,
+    code,
+    name,
+    author,
+    rack,
+    category,
+    status,
+    description
+  ) {
     return {
-      name: name,
-      author: author,
-      rack: rack,
-      category: category,
-      status: status,
+      id,
+      code,
+      name,
+      author,
+      rack,
+      category,
+      status,
+      description,
     };
   }
 
   return (
     <div>
-      <Autocomplete
-        size="small"
-        disablePortal
-        id="input-search"
-        inputValue={inputValue}
-        onInputChange={(event, newInputValue) => {
-          filter(newInputValue);
-        }}
-        options={[...categories, ...books.map((book) => book.name)]}
-        sx={{ width: 300, mb: 2 }}
-        renderInput={(params) => <TextField {...params} label="Search" />}
-      />
-      <Paper sx={{ width: "100%", overflow: "hidden" }}>
-        <TableContainer sx={{ maxHeight: 440 }}>
-          <Table stickyHeader aria-label="sticky table">
-            <TableHead>
-              <TableRow>
-                {columns.map((column) => (
-                  <TableCell
-                    key={column.id}
-                    align={column.align}
-                    style={{ minWidth: column.minWidth }}
-                  >
-                    {column.label}
-                  </TableCell>
-                ))}
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {filteredBooks
-                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                .map((row, i) => {
-                  // console.log(books);
-                  return (
-                    <TableRow hover role="checkbox" tabIndex={-1} key={i}>
-                      {columns.map((column) => {
-                        const value = row[column.id];
-                        return (
-                          <TableCell key={column.id} align={column.align}>
-                            {column.format && typeof value === "number"
-                              ? column.format(value)
-                              : value}
-                          </TableCell>
-                        );
-                      })}
-                    </TableRow>
-                  );
-                })}
-            </TableBody>
-          </Table>
-        </TableContainer>
-        <TablePagination
-          rowsPerPageOptions={[10, 25, 100]}
-          component="div"
-          count={books.length}
-          rowsPerPage={rowsPerPage}
-          page={page}
-          onPageChange={handleChangePage}
-          onRowsPerPageChange={handleChangeRowsPerPage}
+      <Stack
+        mb={{ xs: 2, sm: 2, md: 2 }}
+        direction={{ xs: "column", sm: "column", md: "column", lg: "row" }}
+        spacing="auto"
+      >
+        <Autocomplete
+          freeSolo
+          size="small"
+          disablePortal
+          id="input-search"
+          inputValue={inputValue}
+          onInputChange={(event, newInputValue) => {
+            filter(newInputValue);
+          }}
+          // , ...books.map((book) => book.name)
+          options={[...categories]}
+          sx={{ width: "30vw", pb: 2 }}
+          renderInput={(params) => <TextField {...params} label="Search" />}
         />
+        <Button
+          variant="contained"
+          sx={{ height: "40px", width: "120px" }}
+          onClick={() => navigate("/book/add")}
+        >
+          Add Book
+        </Button>
+      </Stack>
+
+      <Paper sx={{ width: "68vw", overflow: "hidden" }}>
+        <CollapsibleTable books={filteredBooks} />
       </Paper>
     </div>
   );

@@ -6,7 +6,7 @@ export const API = axios.create({
     "https://dev-libraryzyhwf.microgen.id/graphql",
 });
 
-export const graphFetch = function (query, variables) {
+export const graphRequest = function (query, variables) {
   return new Promise(function (resolve, reject) {
     const config = {
       method: "POST",
@@ -20,7 +20,7 @@ export const graphFetch = function (query, variables) {
       variables: variables,
     };
 
-    API.post("/", graphqlQuery, config)
+    API.post("", graphqlQuery, config)
       .then((response) => {
         resolve(response.data);
       })
