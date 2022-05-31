@@ -1,20 +1,23 @@
-import React from "react";
+import React, { useState } from "react";
 
 import { Navigation } from "react-minimal-side-navigation";
 import "react-minimal-side-navigation/lib/ReactMinimalSideNavigation.css";
 import EmailIcon from "@mui/icons-material/Email";
-import { Box, Stack, Typography } from "@mui/material";
+import { Box, Stack } from "@mui/material";
+import Book from "./pages/Book";
 
 function App() {
+  const [itemId, setitemId] = useState("/dashboard");
   return (
     <>
-      <Stack direction="row" height="100vh">
+      <Stack direction="row" height="100vh" sx={{ backgroundColor: "#fffff0" }}>
         <Box width={{ sm: "37%", md: "20%" }}>
           <Navigation
             // you can use your own router's api to get pathname
-            activeItemId="/management/members"
+            activeItemId="/dashboard"
             onSelect={({ itemId }) => {
-              // maybe push to the route
+              console.log(itemId);
+              setitemId(itemId);
             }}
             items={[
               {
@@ -52,7 +55,9 @@ function App() {
             ]}
           />
         </Box>
-        <Typography m="auto">Hello</Typography>
+        <Box mx="auto" my={4}>
+          {itemId === "/dashboard" ? <Book /> : <></>}
+        </Box>
       </Stack>
     </>
   );
