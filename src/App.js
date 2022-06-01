@@ -74,8 +74,8 @@ function App() {
             items={[
               {
                 title: "Book",
-                itemId: "/books",
-                subNav: [
+                itemId: "/book/books",
+                subNav: userContext.user.role === "STAFF" && [
                   {
                     title: "Books",
                     itemId: "/book/books",
@@ -116,7 +116,7 @@ function App() {
         <Box mx="auto" my={4}>
           <Routes>
             <Route exact path="/" element={<Book />} />
-            <Route exact path="/books" element={<Book />} />
+            {/* <Route exact path="/books" element={<Book />} /> */}
             <Route exact path="/book/books" element={<Book />} />
             {/* <Route exact path="/member" element={<Member />} /> */}
             <Route exact path="/account" element={<Auth />} />

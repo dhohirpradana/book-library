@@ -1,10 +1,13 @@
 import { Autocomplete, Button, Paper, Stack, TextField } from "@mui/material";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { graphRequest } from "../configs/api";
 import { useNavigate } from "react-router-dom";
 import CollapsibleTable from "../components/CollapsibleTable";
+import { UserContext } from "../contexts/user";
 
 export default function Book() {
+  // eslint-disable-next-line no-unused-vars
+  const [userContext, userDispatch] = useContext(UserContext);
   const [books, setbooks] = useState([]);
   const [filteredBooks, setfilteredBooks] = useState([]);
   const [categories, setcategories] = useState([]);
@@ -142,13 +145,18 @@ export default function Book() {
           sx={{ width: "30vw", pb: 2 }}
           renderInput={(params) => <TextField {...params} label="Search" />}
         />
-        <Button
-          variant="contained"
-          sx={{ height: "40px", width: "120px" }}
-          onClick={() => navigate("/book/add")}
-        >
-          Add Book
-        </Button>
+        {userContext.user.role === "STAFF" ||
+        userContext.user.role === "ADMIN" ? (
+          <Button
+            variant="contained"
+            sx={{ height: "40px", width: "120px" }}
+            onClick={() => navigate("/book/add")}
+          >
+            Add Book
+          </Button>
+        ) : (
+          <></>
+        )}
       </Stack>
 
       <Paper sx={{ width: "68vw", overflow: "hidden" }}>
