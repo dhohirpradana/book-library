@@ -153,18 +153,22 @@ export default function CollapsibleTable({ books }) {
   function Row(props) {
     const { row } = props;
     const [open, setOpen] = React.useState(false);
-    var orders = filter(row.id);
+    var orders = !userContext.user ? [] : filter(row.id);
     return (
       <React.Fragment>
         <TableRow sx={{ "& > *": { borderBottom: "unset" } }}>
           <TableCell>
-            <IconButton
-              aria-label="expand row"
-              size="small"
-              onClick={() => setOpen(!open)}
-            >
-              {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
-            </IconButton>
+            {!userContext.user.id ? (
+              <></>
+            ) : (
+              <IconButton
+                aria-label="expand row"
+                size="small"
+                onClick={() => setOpen(!open)}
+              >
+                {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
+              </IconButton>
+            )}
           </TableCell>
           <TableCell component="th" scope="row">
             {row.name}
@@ -173,68 +177,73 @@ export default function CollapsibleTable({ books }) {
           <TableCell>{row.category}</TableCell>
           <TableCell>{row.author}</TableCell>
         </TableRow>
-        <TableRow>
-          <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
-            <Collapse in={open} timeout="auto" unmountOnExit>
-              <Box sx={{ margin: 1 }}>
-                <Typography
-                  variant="h5"
-                  gutterBottom
-                  component="div"
-                  color={row.status === "AVAILABLE" ? "green" : "orange"}
-                >
-                  {row.status}
-                </Typography>
-                <Typography gutterBottom component="div">
-                  {row.code}
-                </Typography>
-                <Typography gutterBottom component="div">
-                  {row.description}
-                </Typography>
-                <OrderModal
-                  bookId={row.id}
-                  bookName={row.name}
-                  startD={!orders.length ? null : orders[orders.length - 1]}
-                />
-                {filter(row.id).length === 0 ? (
-                  <Typography variant="h6" gutterBottom component="div">
-                    No Queue
+        {!userContext.user.id ? (
+          <></>
+        ) : (
+          <TableRow>
+            <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
+              <Collapse in={open} timeout="auto" unmountOnExit>
+                <Box sx={{ margin: 1 }}>
+                  <Typography
+                    variant="h5"
+                    gutterBottom
+                    component="div"
+                    color={row.status === "AVAILABLE" ? "green" : "orange"}
+                  >
+                    {row.status}
                   </Typography>
-                ) : (
-                  <Stack>
+                  <Typography gutterBottom component="div">
+                    {row.code}
+                  </Typography>
+                  <Typography gutterBottom component="div">
+                    {row.description}
+                  </Typography>
+                  <OrderModal
+                    bookId={row.id}
+                    bookName={row.name}
+                    startD={!orders.length ? null : orders[orders.length - 1]}
+                  />
+                  {filter(row.id).length === 0 ? (
                     <Typography variant="h6" gutterBottom component="div">
-                      Queue
+                      No Queue
                     </Typography>
-                    <Table size="small" aria-label="orders">
-                      <TableHead>
-                        <TableRow>
-                          <TableCell>Start</TableCell>
-                          <TableCell>Due</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {orders.map((order) => (
-                          <TableRow key={order.id}>
-                            <TableCell component="th" scope="row">
-                              {prettyDate(order.dateStart)}
-                            </TableCell>
-                            <TableCell>{prettyDate(order.dueDate)}</TableCell>
+                  ) : (
+                    <Stack>
+                      <Typography variant="h6" gutterBottom component="div">
+                        Queue
+                      </Typography>
+                      <Table size="small" aria-label="orders">
+                        <TableHead>
+                          <TableRow>
+                            <TableCell>Start</TableCell>
+                            <TableCell>Due</TableCell>
                           </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </Stack>
-                )}
-              </Box>
-            </Collapse>
-          </TableCell>
-        </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {orders.map((order) => (
+                            <TableRow key={order.id}>
+                              <TableCell component="th" scope="row">
+                                {prettyDate(order.dateStart)}
+                              </TableCell>
+                              <TableCell>{prettyDate(order.dueDate)}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </Stack>
+                  )}
+                </Box>
+              </Collapse>
+            </TableCell>
+          </TableRow>
+        )}
       </React.Fragment>
     );
   }
 
   useEffect(() => {
-    fetchOrders();
+    if (userContext.user.id) fetchOrders();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   Row.propTypes = {

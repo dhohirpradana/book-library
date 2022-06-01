@@ -4,6 +4,9 @@ import createdAtFormat from "../constants/createdAtFormat";
 export default function orderValidation(userId, start, due, bookId) {
   // console.log(userContext.user.id);
   // console.log(createAtFormat(new Date()));
+  let tom = new Date();
+  tom.setDate(tom.getDate() + 1);
+  // console.log(tom);
   let max = 3;
   graphRequest(
     `query($where:OrderFilter){
@@ -15,10 +18,10 @@ export default function orderValidation(userId, start, due, bookId) {
     {
       where: {
         userId: userId,
-        dateStart_gte: start,
-        dueDate_lte: due,
+        // dateStart_gte: start,
+        // dueDate_lte: due,
         createdAt_gte: createdAtFormat(new Date()),
-        // createdAt_lte: "2022-04-13T15:08:56.370Z",
+        createdAt_lte: createdAtFormat(tom),
       },
     }
   ).then((res) => {
