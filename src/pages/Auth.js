@@ -49,10 +49,12 @@ export default function Auth() {
         });
       }
       let payload = res.data.login;
+      console.log(res.data.login.user.role);
       userDispatch({
         type: "AUTH_SUCCESS",
         payload,
       });
+      // window.location.reload();
     });
   };
 
@@ -63,7 +65,7 @@ export default function Auth() {
   };
 
   useEffect(() => {
-    console.log(userContext.user);
+    // console.log(userContext.user);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

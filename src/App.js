@@ -32,6 +32,7 @@ function App() {
         firstName
         lastName
         email
+        role
         phoneNumber
         createdAt
       }
