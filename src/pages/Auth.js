@@ -16,7 +16,7 @@ import { UserContext } from "../contexts/user";
 export default function Auth() {
   const loginReff = useRef();
   const [userContext, userDispatch] = useContext(UserContext);
-  const [error, seterror] = useState(null);
+  const [error, seterror] = useState("");
 
   const handleLogin = () => {
     seterror(null);
@@ -72,14 +72,14 @@ export default function Auth() {
       {!userContext.isLogin ? (
         <Paper sx={{ p: 2 }} elevation={3}>
           <form ref={loginReff}>
+            {error ? (
+              <Alert sx={{ mb: 3 }} severity="error">
+                {error}
+              </Alert>
+            ) : (
+              <></>
+            )}
             <Stack>
-              {error ? (
-                <Alert sx={{ mb: 3 }} severity="error">
-                  {error}
-                </Alert>
-              ) : (
-                <></>
-              )}
               <FormControl sx={{ mb: 1 }}>
                 <TextField id="email" label="Email" defaultValue="" />
                 <FormHelperText id="my-helper-text">

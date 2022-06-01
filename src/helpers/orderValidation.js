@@ -2,7 +2,7 @@ import { graphRequest } from "../configs/api";
 import createdAtFormat from "../constants/createdAtFormat";
 
 export default function orderValidation(userId, start, due, bookId) {
-  // console.log(userContext.user.id);
+  // console.log(userContext.isLogin);
   // console.log(createAtFormat(new Date()));
   let tom = new Date();
   tom.setDate(tom.getDate() + 1);

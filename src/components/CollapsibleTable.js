@@ -68,7 +68,7 @@ export default function CollapsibleTable({ books }) {
     useEffect(() => {}, []);
 
     const orderBook = () => {
-      orderValidation(userContext.user.id, startDate, dueDate, bookId);
+      orderValidation(userContext.isLogin, startDate, dueDate, bookId);
     };
     const style = {
       position: "absolute",
@@ -158,7 +158,7 @@ export default function CollapsibleTable({ books }) {
       <React.Fragment>
         <TableRow sx={{ "& > *": { borderBottom: "unset" } }}>
           <TableCell>
-            {!userContext.user.id ? (
+            {!userContext.isLogin ? (
               <></>
             ) : (
               <IconButton
@@ -177,7 +177,7 @@ export default function CollapsibleTable({ books }) {
           <TableCell>{row.category}</TableCell>
           <TableCell>{row.author}</TableCell>
         </TableRow>
-        {!userContext.user.id ? (
+        {!userContext.isLogin ? (
           <></>
         ) : (
           <TableRow>
@@ -242,7 +242,7 @@ export default function CollapsibleTable({ books }) {
   }
 
   useEffect(() => {
-    if (userContext.user.id) fetchOrders();
+    if (userContext.isLogin) fetchOrders();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
