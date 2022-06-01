@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import Box from "@mui/material/Box";
 import Collapse from "@mui/material/Collapse";
@@ -15,11 +15,13 @@ import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import { graphRequest } from "../configs/api";
 import prettyDate from "../constants/prettyDate";
-import { Button, Modal, Stack } from "@mui/material";
+import { Autocomplete, Button, Modal, Stack, TextField } from "@mui/material";
 import ReactDatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import { UserContext } from "../contexts/user";
 
 export default function CollapsibleTable({ books }) {
+  const [userContext, userDispatch] = useContext(UserContext);
   const [orders, setorders] = React.useState([]);
 
   const fetchOrders = () => {
@@ -38,9 +40,7 @@ export default function CollapsibleTable({ books }) {
     }`
     )
       .then((res) => {
-        setorders([]);
         setorders(res.data.orders);
-        console.log(res.data);
       })
       .catch((error) => console.log(error));
   };
@@ -55,7 +55,54 @@ export default function CollapsibleTable({ books }) {
     return filteredOrders;
   };
 
-  function OrderModal() {
+  function OrderModal({ bookId, bookName, startD }) {
+    var dateM = !startD ? new Date() : new Date(startD.dueDate);
+    dateM.setDate(dateM.getDate() + 1);
+    console.log(new Date());
+
+    const [open, setOpen] = React.useState(false);
+    const [startDate, setStartDate] = useState(dateM);
+    const [dueDate, setDueDate] = useState(dateM);
+    const [userId, setUserId] = useState();
+    const [users, setUsers] = useState([]);
+
+    useEffect(() => {
+      fetchUsers();
+    }, []);
+
+    const fetchUsers = () => {
+      graphRequest(
+        `query($where: UserFilter) {
+        users(where: $where) {
+          id
+          firstName
+          lastName
+          email
+        }
+      }`,
+        { where: { role: "AUTHENTICATED" } }
+      )
+        .then((res) => setUsers(res.data.users))
+        .catch((err) => console.log(err));
+    };
+
+    const orderBook = () => {
+      graphRequest(
+        `mutation($input: CreateOrderInput!) {
+          createOrder(input: $input){
+            status
+          }
+        }
+        `,
+        {
+          input: {
+            dateStart: startDate,
+            dueDate: dueDate,
+            bookId: bookId,
+          },
+        }
+      ).then((res) => console.log(res));
+    };
     const style = {
       position: "absolute",
       top: "50%",
@@ -68,8 +115,7 @@ export default function CollapsibleTable({ books }) {
       px: 4,
       pb: 3,
     };
-    const [open, setOpen] = React.useState(false);
-    const [startDate, setStartDate] = useState(new Date());
+
     const handleOpen = () => {
       setOpen(true);
     };
@@ -89,14 +135,62 @@ export default function CollapsibleTable({ books }) {
           aria-labelledby="child-modal-title"
           aria-describedby="child-modal-description"
         >
-          <Box sx={{ ...style, width: 200 }}>
+          <Box sx={{ ...style }}>
             <h2 id="child-modal-title">Order Book</h2>
-            <ReactDatePicker
-              selected={startDate}
-              minDate={new Date()}
-              onSelect={(date: Date) => setStartDate(date)}
+            <Typography gutterBottom>{bookName}</Typography>
+            <Autocomplete
+              id="user"
+              freeSolo
+              size="small"
+              disablePortal
+              options={users}
+              sx={{ pb: 2 }}
+              getOptionLabel={(option) =>
+                option.firstName + option.lastName + " (" + option.email + ")"
+              }
+              style={{ width: 400 }}
+              renderInput={(params) => <TextField {...params} label="To" />}
+              onChange={(event, newValue) => {}}
             />
-            <Button onClick={handleClose}>Close Child Modal</Button>
+            <Stack direction="row" spacing="auto">
+              <Stack mb={2}>
+                <Typography>Start Date</Typography>
+                <ReactDatePicker
+                  selected={startDate}
+                  minDate={dateM}
+                  onSelect={(date: Date) => {
+                    setStartDate(date);
+                    setDueDate(date);
+                  }}
+                />
+              </Stack>
+              <Stack>
+                <Typography>Due Date</Typography>
+                <ReactDatePicker
+                  selected={dueDate}
+                  minDate={startDate}
+                  onSelect={(date: Date) => setDueDate(date)}
+                />
+              </Stack>
+            </Stack>
+            <Stack direction="row"></Stack>
+            <Button
+              sx={{ mr: 3 }}
+              variant="contained"
+              color="error"
+              size="small"
+              onClick={handleClose}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="contained"
+              color="success"
+              size="small"
+              onClick={orderBook}
+            >
+              Order
+            </Button>
           </Box>
         </Modal>
       </React.Fragment>
@@ -106,7 +200,7 @@ export default function CollapsibleTable({ books }) {
   function Row(props) {
     const { row } = props;
     const [open, setOpen] = React.useState(false);
-
+    var orders = filter(row.id);
     return (
       <React.Fragment>
         <TableRow sx={{ "& > *": { borderBottom: "unset" } }}>
@@ -144,7 +238,11 @@ export default function CollapsibleTable({ books }) {
                 <Typography gutterBottom component="div">
                   {row.description}
                 </Typography>
-                <OrderModal />
+                <OrderModal
+                  bookId={row.id}
+                  bookName={row.name}
+                  startD={!orders.length ? null : orders[orders.length - 1]}
+                />
                 {filter(row.id).length === 0 ? (
                   <Typography variant="h6" gutterBottom component="div">
                     No Queue
@@ -162,7 +260,7 @@ export default function CollapsibleTable({ books }) {
                         </TableRow>
                       </TableHead>
                       <TableBody>
-                        {filter(row.id).map((order) => (
+                        {orders.map((order) => (
                           <TableRow key={order.id}>
                             <TableCell component="th" scope="row">
                               {prettyDate(order.dateStart)}
@@ -184,7 +282,6 @@ export default function CollapsibleTable({ books }) {
 
   useEffect(() => {
     fetchOrders();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   Row.propTypes = {
