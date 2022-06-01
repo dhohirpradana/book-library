@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import Box from "@mui/material/Box";
 import Collapse from "@mui/material/Collapse";
@@ -15,7 +15,9 @@ import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import { graphRequest } from "../configs/api";
 import prettyDate from "../constants/prettyDate";
-import { Stack } from "@mui/material";
+import { Button, Modal, Stack } from "@mui/material";
+import ReactDatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 export default function CollapsibleTable({ books }) {
   const [orders, setorders] = React.useState([]);
@@ -47,11 +49,59 @@ export default function CollapsibleTable({ books }) {
     let filteredOrders = orders.filter(function (currentElement) {
       return (
         currentElement.book.id === bookId &&
-        new Date(currentElement.dateStart).getTime() > new Date().getTime()
+        new Date(currentElement.dueDate).getTime() > new Date().getTime()
       );
     });
     return filteredOrders;
   };
+
+  function OrderModal() {
+    const style = {
+      position: "absolute",
+      top: "50%",
+      left: "50%",
+      transform: "translate(-50%, -50%)",
+      width: 400,
+      bgcolor: "background.paper",
+      boxShadow: 24,
+      pt: 2,
+      px: 4,
+      pb: 3,
+    };
+    const [open, setOpen] = React.useState(false);
+    const [startDate, setStartDate] = useState(new Date());
+    const handleOpen = () => {
+      setOpen(true);
+    };
+    const handleClose = () => {
+      setOpen(false);
+    };
+
+    return (
+      <React.Fragment>
+        <Button size="small" variant="contained" onClick={handleOpen}>
+          Order
+        </Button>
+        <Modal
+          hideBackdrop
+          open={open}
+          onClose={handleClose}
+          aria-labelledby="child-modal-title"
+          aria-describedby="child-modal-description"
+        >
+          <Box sx={{ ...style, width: 200 }}>
+            <h2 id="child-modal-title">Order Book</h2>
+            <ReactDatePicker
+              selected={startDate}
+              minDate={new Date()}
+              onSelect={(date: Date) => setStartDate(date)}
+            />
+            <Button onClick={handleClose}>Close Child Modal</Button>
+          </Box>
+        </Modal>
+      </React.Fragment>
+    );
+  }
 
   function Row(props) {
     const { row } = props;
@@ -94,6 +144,7 @@ export default function CollapsibleTable({ books }) {
                 <Typography gutterBottom component="div">
                   {row.description}
                 </Typography>
+                <OrderModal />
                 {filter(row.id).length === 0 ? (
                   <Typography variant="h6" gutterBottom component="div">
                     No Queue
