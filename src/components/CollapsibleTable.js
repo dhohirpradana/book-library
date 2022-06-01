@@ -15,12 +15,14 @@ import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import { graphRequest } from "../configs/api";
 import prettyDate from "../constants/prettyDate";
-import { Autocomplete, Button, Modal, Stack, TextField } from "@mui/material";
+import { Button, Modal, Stack } from "@mui/material";
 import ReactDatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { UserContext } from "../contexts/user";
+import orderValidation from "../helpers/orderValidation";
 
 export default function CollapsibleTable({ books }) {
+  // eslint-disable-next-line no-unused-vars
   const [userContext, userDispatch] = useContext(UserContext);
   const [orders, setorders] = React.useState([]);
 
@@ -58,50 +60,15 @@ export default function CollapsibleTable({ books }) {
   function OrderModal({ bookId, bookName, startD }) {
     var dateM = !startD ? new Date() : new Date(startD.dueDate);
     dateM.setDate(dateM.getDate() + 1);
-    console.log(new Date());
 
     const [open, setOpen] = React.useState(false);
     const [startDate, setStartDate] = useState(dateM);
     const [dueDate, setDueDate] = useState(dateM);
-    const [userId, setUserId] = useState();
-    const [users, setUsers] = useState([]);
 
-    useEffect(() => {
-      fetchUsers();
-    }, []);
-
-    const fetchUsers = () => {
-      graphRequest(
-        `query($where: UserFilter) {
-        users(where: $where) {
-          id
-          firstName
-          lastName
-          email
-        }
-      }`,
-        { where: { role: "AUTHENTICATED" } }
-      )
-        .then((res) => setUsers(res.data.users))
-        .catch((err) => console.log(err));
-    };
+    useEffect(() => {}, []);
 
     const orderBook = () => {
-      graphRequest(
-        `mutation($input: CreateOrderInput!) {
-          createOrder(input: $input){
-            status
-          }
-        }
-        `,
-        {
-          input: {
-            dateStart: startDate,
-            dueDate: dueDate,
-            bookId: bookId,
-          },
-        }
-      ).then((res) => console.log(res));
+      orderValidation(userContext.user.id, startDate, dueDate, bookId);
     };
     const style = {
       position: "absolute",
@@ -138,20 +105,6 @@ export default function CollapsibleTable({ books }) {
           <Box sx={{ ...style }}>
             <h2 id="child-modal-title">Order Book</h2>
             <Typography gutterBottom>{bookName}</Typography>
-            <Autocomplete
-              id="user"
-              freeSolo
-              size="small"
-              disablePortal
-              options={users}
-              sx={{ pb: 2 }}
-              getOptionLabel={(option) =>
-                option.firstName + option.lastName + " (" + option.email + ")"
-              }
-              style={{ width: 400 }}
-              renderInput={(params) => <TextField {...params} label="To" />}
-              onChange={(event, newValue) => {}}
-            />
             <Stack direction="row" spacing="auto">
               <Stack mb={2}>
                 <Typography>Start Date</Typography>
