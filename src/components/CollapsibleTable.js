@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from "react";
+import { Fragment, useContext, useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import Box from "@mui/material/Box";
 import Collapse from "@mui/material/Collapse";
@@ -24,44 +24,12 @@ import orderValidation from "../helpers/orderValidation";
 export default function CollapsibleTable({ books }) {
   // eslint-disable-next-line no-unused-vars
   const [userContext, userDispatch] = useContext(UserContext);
-  const [orders, setorders] = React.useState([]);
 
-  const fetchOrders = () => {
-    graphRequest(
-      `query($where: OrderFilter) {
-      orders(where: $where) {
-        id
-        status
-        book {
-          id
-          name
-        }
-        dateStart
-        dueDate
-      }
-    }`
-    )
-      .then((res) => {
-        setorders(res.data.orders);
-      })
-      .catch((error) => console.log(error));
-  };
-
-  const filter = (bookId) => {
-    let filteredOrders = orders.filter(function (currentElement) {
-      return (
-        currentElement.book.id === bookId &&
-        new Date(currentElement.dueDate).getTime() > new Date().getTime()
-      );
-    });
-    return filteredOrders;
-  };
-
-  function OrderModal({ bookId, bookName, startD }) {
+  function OrderModal({ bookId, bookName, startD, status }) {
     var dateM = !startD ? new Date() : new Date(startD.dueDate);
     dateM.setDate(dateM.getDate() + 1);
 
-    const [open, setOpen] = React.useState(false);
+    const [open, setOpen] = useState(false);
     const [startDate, setStartDate] = useState(dateM);
     const [dueDate, setDueDate] = useState(dateM);
 
@@ -91,8 +59,13 @@ export default function CollapsibleTable({ books }) {
     };
 
     return (
-      <React.Fragment>
-        <Button size="small" variant="contained" onClick={handleOpen}>
+      <Fragment>
+        <Button
+          disabled={status === "BORROWED"}
+          size="small"
+          variant="contained"
+          onClick={handleOpen}
+        >
           Order
         </Button>
         <Modal
@@ -146,16 +119,45 @@ export default function CollapsibleTable({ books }) {
             </Button>
           </Box>
         </Modal>
-      </React.Fragment>
+      </Fragment>
     );
   }
 
   function Row(props) {
     const { row } = props;
-    const [open, setOpen] = React.useState(false);
-    var orders = !userContext.isLogin ? [] : filter(row.id);
+    const [open, setOpen] = useState(false);
+    const [orders, setOrders] = useState([]);
+    const ordersByBookId = () => {
+      graphRequest(
+        `query($where: OrderFilter) {
+        orders(where: $where) {
+          id
+          user {
+            firstName
+          }
+          book {
+            name
+          }
+          status
+          dateStart
+          dueDate
+        }
+      }`,
+        {
+          where: {
+            bookId: row.id,
+            dueDate_gte: new Date(),
+          },
+        }
+      ).then((res) => {
+        console.log(row.id);
+        console.log(res.data);
+        setOrders(res.data.orders);
+      });
+    };
+
     return (
-      <React.Fragment>
+      <Fragment>
         <TableRow sx={{ "& > *": { borderBottom: "unset" } }}>
           <TableCell>
             {!userContext.isLogin ? (
@@ -164,7 +166,10 @@ export default function CollapsibleTable({ books }) {
               <IconButton
                 aria-label="expand row"
                 size="small"
-                onClick={() => setOpen(!open)}
+                onClick={() => {
+                  setOpen(!open);
+                  if (!open) ordersByBookId(row.id);
+                }}
               >
                 {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
               </IconButton>
@@ -201,6 +206,7 @@ export default function CollapsibleTable({ books }) {
                   {userContext.user.role === "AUTHENTICATED" ? (
                     <OrderModal
                       bookId={row.id}
+                      status={row.status}
                       bookName={row.name}
                       startD={!orders.length ? null : orders[orders.length - 1]}
                     />
@@ -208,7 +214,7 @@ export default function CollapsibleTable({ books }) {
                     <></>
                   )}
 
-                  {filter(row.id).length === 0 ? (
+                  {orders.length === 0 ? (
                     <Typography variant="h6" gutterBottom component="div">
                       No Queue
                     </Typography>
@@ -242,14 +248,9 @@ export default function CollapsibleTable({ books }) {
             </TableCell>
           </TableRow>
         )}
-      </React.Fragment>
+      </Fragment>
     );
   }
-
-  useEffect(() => {
-    if (userContext.isLogin) fetchOrders();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   Row.propTypes = {
     row: PropTypes.shape({

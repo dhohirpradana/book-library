@@ -1,4 +1,5 @@
 import { createContext, useReducer } from "react";
+import { setAuthToken } from "../configs/api";
 
 export const UserContext = createContext();
 
@@ -14,6 +15,7 @@ const reducer = (state, action) => {
     case "AUTH_SUCCESS":
     case "LOGIN_SUCCESS":
       localStorage.setItem("token", payload.token);
+      setAuthToken(payload.token);
       return {
         isLogin: true,
         user: payload.user,
