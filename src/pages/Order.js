@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { Fragment, useState } from "react";
 import PropTypes from "prop-types";
 import { graphRequest } from "../configs/api";
 import prettyDate from "../constants/prettyDate";
@@ -8,6 +8,8 @@ import {
   Button,
   Collapse,
   IconButton,
+  Modal,
+  Stack,
   Table,
   TableBody,
   TableCell,
@@ -15,10 +17,12 @@ import {
   TableHead,
   TableRow,
   TextField,
+  Typography,
 } from "@mui/material";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import { Box } from "@mui/system";
+import ReactDatePicker from "react-datepicker";
 
 export default function Order() {
   const [orders, setorders] = useState([]);
@@ -38,27 +42,123 @@ export default function Order() {
     setfilteredOrders(filteredOrders);
   };
 
-  const approveOrder = (orderId) => {
-    graphRequest(
-      `
-    mutation($id:String!, $input: UpdateOrderInput!) {
-      updateOrder(id:$id, input:$input) {
-        id
-        status
-      }
-    }
-    `,
-      { id: orderId, input: { status: "APPROVED" } }
-    ).then((res) => {
-      fetchOrders();
-      alert("Order Approved");
-    });
-  };
+  function ApproveOrderModal({ orderId, bookName, startD }) {
+    var dateM = !startD
+      ? new Date()
+      : new Date(startD) < new Date()
+      ? new Date()
+      : new Date(startD);
+    // dateM.setDate(dateM.getDate() + 1);
+    const [open, setOpen] = useState(false);
+    const [startDate, setStartDate] = useState(null);
+    const [dueDate, setDueDate] = useState(null);
+
+    const approveOrder = () => {
+      graphRequest(
+        `
+        mutation($id:String!, $input: UpdateOrderInput!) {
+          updateOrder(id:$id, input:$input) {
+            id
+            status
+          }
+        }
+        `,
+        { id: orderId, input: { status: "APPROVED" } }
+      ).then((res) => {
+        // fetchOrders();
+        window.location.reload();
+        alert("Order Approved");
+      });
+      setOpen(false);
+    };
+
+    const style = {
+      position: "absolute",
+      top: "50%",
+      left: "50%",
+      transform: "translate(-50%, -50%)",
+      width: 400,
+      bgcolor: "white",
+      borderRadius: 2,
+      // boxShadow: 24,
+      boxShadow: "0px 2px 30px 0px rgba(0,0,0,0.75)",
+      pt: 2,
+      px: 4,
+      pb: 3,
+    };
+
+    const handleOpen = () => {
+      setOpen(true);
+    };
+    const handleClose = () => {
+      setOpen(false);
+    };
+
+    return (
+      <Fragment>
+        <Button size="small" variant="contained" onClick={handleOpen}>
+          Approve Order
+        </Button>
+        <Modal
+          hideBackdrop
+          open={open}
+          onClose={handleClose}
+          aria-labelledby="child-modal-title"
+          aria-describedby="child-modal-description"
+        >
+          <Box sx={{ ...style }}>
+            <h2 id="child-modal-title">Approve Order</h2>
+            <Typography gutterBottom>{bookName}</Typography>
+            <Stack direction="row" spacing="auto">
+              <Stack mb={2}>
+                <Typography>Start Date</Typography>
+                <ReactDatePicker
+                  selected={startDate}
+                  minDate={dateM}
+                  onSelect={(date: Date) => {
+                    setStartDate(date);
+                  }}
+                />
+              </Stack>
+              <Stack>
+                <Typography>Due Date</Typography>
+                <ReactDatePicker
+                  selected={dueDate}
+                  minDate={dateM}
+                  onSelect={(date: Date) => setDueDate(date)}
+                />
+              </Stack>
+            </Stack>
+            <Stack direction="row"></Stack>
+            <Button
+              sx={{ mr: 3 }}
+              variant="contained"
+              color="error"
+              size="small"
+              onClick={handleClose}
+            >
+              Cancel
+            </Button>
+            <Button
+              disabled={!startDate || !dueDate}
+              variant="contained"
+              color="success"
+              size="small"
+              onClick={approveOrder}
+            >
+              Approve Order
+            </Button>
+          </Box>
+        </Modal>
+      </Fragment>
+    );
+  }
 
   const fetchOrders = () => {
     setorders([]);
-    graphRequest(`query{
-      orders(limit: 5000, skip: 0) {
+    graphRequest(
+      `query($where: OrderFilter){
+      orders(where: $where, limit: 5000, skip: 0) {
         id
         user {
           firstName
@@ -74,7 +174,9 @@ export default function Order() {
         dueDate
       }
     }
-    `).then((res) => {
+    `,
+      { where: { status: "PENDING" } }
+    ).then((res) => {
       // eslint-disable-next-line array-callback-return
       res.data.orders.map((order) => {
         setorders((old) => [
@@ -123,10 +225,10 @@ export default function Order() {
 
   function Row(props) {
     const { row } = props;
-    const [open, setOpen] = React.useState(false);
+    const [open, setOpen] = useState(false);
 
     return (
-      <React.Fragment>
+      <Fragment>
         <TableRow sx={{ "& > *": { borderBottom: "unset" } }}>
           <TableCell>
             <IconButton
@@ -147,21 +249,12 @@ export default function Order() {
           <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
             <Collapse in={open} timeout="auto" unmountOnExit>
               <Box sx={{ margin: 1 }}>
-                <Button
-                  disabled={
-                    row.status === "APPROVED" || row.bookStatus !== "AVAILABLE"
-                  }
-                  variant="contained"
-                  size="small"
-                  onClick={() => approveOrder(row.id)}
-                >
-                  Borrow
-                </Button>
+                <ApproveOrderModal orderId={row.id} startD={row.dateStart} />
               </Box>
             </Collapse>
           </TableCell>
         </TableRow>
-      </React.Fragment>
+      </Fragment>
     );
   }
 

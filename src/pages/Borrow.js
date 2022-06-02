@@ -72,7 +72,6 @@ export default function Borrow() {
       }
     ).then((res) => {
       // fetchBorrows();
-      window.location.reload();
       graphRequest(
         `
       mutation($id: String!, $input: UpdateBookInput!) {
@@ -89,6 +88,7 @@ export default function Borrow() {
           },
         }
       ).then((res) => {
+        window.location.reload();
         alert("Book Received\nStatus: " + status);
       });
     });

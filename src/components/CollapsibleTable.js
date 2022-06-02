@@ -1,4 +1,4 @@
-import { Fragment, useContext, useEffect, useState } from "react";
+import { Fragment, useContext, useState } from "react";
 import PropTypes from "prop-types";
 import Box from "@mui/material/Box";
 import Collapse from "@mui/material/Collapse";
@@ -25,14 +25,15 @@ export default function CollapsibleTable({ books }) {
   // eslint-disable-next-line no-unused-vars
   const [userContext, userDispatch] = useContext(UserContext);
 
-  function OrderModal({ bookId, bookName, startD, status }) {
-    var dateM = !startD ? new Date() : new Date(startD.dueDate);
+  function OrderModal({ bookId, bookName, dueD, status }) {
+    console.log(dueD);
+    var dateM = !dueD ? new Date() : new Date(dueD);
     dateM.setDate(dateM.getDate() + 1);
     const [open, setOpen] = useState(false);
-    const [startDate, setStartDate] = useState(dateM);
-    const [dueDate, setDueDate] = useState(dateM);
+    const [startDate, setStartDate] = useState(null);
+    const [dueDate, setDueDate] = useState(null);
 
-    useEffect(() => {}, []);
+    // useEffect(() => {}, []);
 
     const orderBook = () => {
       bookOrder(userContext.user.id, startDate, dueDate, bookId);
@@ -81,7 +82,6 @@ export default function CollapsibleTable({ books }) {
                   minDate={dateM}
                   onSelect={(date: Date) => {
                     setStartDate(date);
-                    setDueDate(date);
                   }}
                 />
               </Stack>
@@ -89,7 +89,7 @@ export default function CollapsibleTable({ books }) {
                 <Typography>Due Date</Typography>
                 <ReactDatePicker
                   selected={dueDate}
-                  minDate={startDate}
+                  minDate={dateM}
                   onSelect={(date: Date) => setDueDate(date)}
                 />
               </Stack>
@@ -105,6 +105,7 @@ export default function CollapsibleTable({ books }) {
               Cancel
             </Button>
             <Button
+              disabled={!startDate || !dueDate}
               variant="contained"
               color="success"
               size="small"
@@ -122,7 +123,10 @@ export default function CollapsibleTable({ books }) {
     const { row } = props;
     const [open, setOpen] = useState(false);
     const [orders, setOrders] = useState([]);
+    const [loadOrders, setloadOrders] = useState(false);
+
     const ordersByBookId = () => {
+      setloadOrders(true);
       graphRequest(
         `query($where: OrderFilter, $orderBy: OrderOrderBy) {
           orders(where: $where, orderBy: $orderBy) {
@@ -143,13 +147,15 @@ export default function CollapsibleTable({ books }) {
         {
           where: {
             bookId: row.id,
-            dueDate_gte: new Date(),
+            // dueDate_gte: new Date(),
+            status: "PENDING",
           },
           orderBy: "createdAt_DESC",
         }
       ).then((res) => {
-        console.log(row.id);
-        console.log(res.data);
+        // console.log(row.id);
+        // console.log(res.data);
+        setloadOrders(false);
         setOrders(res.data.orders);
       });
     };
@@ -201,12 +207,12 @@ export default function CollapsibleTable({ books }) {
                   <Typography gutterBottom component="div">
                     {row.description}
                   </Typography>
-                  {userContext.user.role === "AUTHENTICATED" ? (
+                  {userContext.user.role === "AUTHENTICATED" && !loadOrders ? (
                     <OrderModal
                       bookId={row.id}
                       status={row.status}
                       bookName={row.name}
-                      startD={!orders.length ? null : orders[orders.length - 1]}
+                      dueD={!orders.length ? null : orders[0].dueDate}
                     />
                   ) : (
                     <></>
