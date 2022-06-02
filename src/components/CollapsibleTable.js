@@ -60,12 +60,7 @@ export default function CollapsibleTable({ books }) {
 
     return (
       <Fragment>
-        <Button
-          disabled={status === "BORROWED"}
-          size="small"
-          variant="contained"
-          onClick={handleOpen}
-        >
+        <Button size="small" variant="contained" onClick={handleOpen}>
           Order
         </Button>
         <Modal
@@ -129,25 +124,28 @@ export default function CollapsibleTable({ books }) {
     const [orders, setOrders] = useState([]);
     const ordersByBookId = () => {
       graphRequest(
-        `query($where: OrderFilter) {
-        orders(where: $where) {
-          id
-          user {
-            firstName
+        `query($where: OrderFilter, $orderBy: OrderOrderBy) {
+          orders(where: $where, orderBy: $orderBy) {
+            id
+            user {
+              firstName
+            }
+            book {
+              id
+              name
+            }
+            status
+            dateStart
+            dueDate
           }
-          book {
-            name
-          }
-          status
-          dateStart
-          dueDate
         }
-      }`,
+        `,
         {
           where: {
             bookId: row.id,
             dueDate_gte: new Date(),
           },
+          orderBy: "createdAt_DESC",
         }
       ).then((res) => {
         console.log(row.id);

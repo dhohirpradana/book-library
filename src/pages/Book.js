@@ -32,8 +32,10 @@ export default function Book() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const fetchBooks = async () => {
-    await graphRequest(`{
+  const fetchBooks = () => {
+    setbooks([]);
+    setfilteredBooks([]);
+    graphRequest(`{
       books {
         id
         code
@@ -52,8 +54,6 @@ export default function Book() {
       }
     }`)
       .then((res) => {
-        setbooks([]);
-        setfilteredBooks([]);
         // eslint-disable-next-line array-callback-return
         res.data.books.map((book) => {
           setbooks((old) => [
