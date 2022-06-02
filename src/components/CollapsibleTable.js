@@ -68,7 +68,7 @@ export default function CollapsibleTable({ books }) {
     useEffect(() => {}, []);
 
     const orderBook = () => {
-      orderValidation(userContext.isLogin, startDate, dueDate, bookId);
+      orderValidation(userContext.user.id, startDate, dueDate, bookId);
     };
     const style = {
       position: "absolute",
@@ -198,11 +198,16 @@ export default function CollapsibleTable({ books }) {
                   <Typography gutterBottom component="div">
                     {row.description}
                   </Typography>
-                  <OrderModal
-                    bookId={row.id}
-                    bookName={row.name}
-                    startD={!orders.length ? null : orders[orders.length - 1]}
-                  />
+                  {userContext.user.role === "AUTHENTICATED" ? (
+                    <OrderModal
+                      bookId={row.id}
+                      bookName={row.name}
+                      startD={!orders.length ? null : orders[orders.length - 1]}
+                    />
+                  ) : (
+                    <></>
+                  )}
+
                   {filter(row.id).length === 0 ? (
                     <Typography variant="h6" gutterBottom component="div">
                       No Queue

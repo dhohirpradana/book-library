@@ -25,6 +25,7 @@ export const graphRequest = function (query, variables) {
         resolve(response.data);
       })
       .catch((error) => {
+        console.log(error);
         reject(error);
       });
   });

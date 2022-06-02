@@ -6,12 +6,13 @@ export default function BookAdd() {
   const [categories, setcategories] = useState([]);
   const [racks, setracks] = useState([]);
   const [authors, setauthors] = useState([]);
-  const [categoryId, setcategoryId] = useState(null);
-  const [rackId, setrackId] = useState(null);
-  const [authorId, setauthorId] = useState(null);
+  const [categoryId, setcategoryId] = useState("");
+  const [rackId, setrackId] = useState("");
+  const [authorId, setauthorId] = useState("");
   const ref = useRef();
 
   const createBook = () => {
+    console.log(categoryId, rackId, authorId, ref.current.name.value);
     graphRequest(
       `mutation($input: CreateBookInput!) {
       createBook(input: $input) {
@@ -38,7 +39,10 @@ export default function BookAdd() {
           authorId: authorId,
         },
       }
-    );
+    ).then((res) => {
+      alert("Created " + res.data.createBook.name);
+      ref.current.name.value = "";
+    });
   };
 
   const fetchCategories = () => {
@@ -90,7 +94,7 @@ export default function BookAdd() {
               <TextField {...params} label="Category" variant="outlined" />
             )}
             onChange={(event, newValue) => {
-              console.log(newValue.id);
+              setcategoryId(newValue.id);
             }}
           />
           <Autocomplete
@@ -102,11 +106,11 @@ export default function BookAdd() {
               <TextField {...params} label="Rack" variant="outlined" />
             )}
             onChange={(event, newValue) => {
-              console.log(newValue.id);
+              setrackId(newValue.id);
             }}
           />
           <Autocomplete
-            id="category"
+            id="author"
             options={authors}
             getOptionLabel={(option) => option.name}
             style={{ width: 300 }}
@@ -114,19 +118,17 @@ export default function BookAdd() {
               <TextField {...params} label="Author" variant="outlined" />
             )}
             onChange={(event, newValue) => {
-              console.log(newValue.id);
+              setauthorId(newValue.id);
             }}
           />
           <Button
             variant="contained"
             size="medium"
             disabled={
-              !(
-                categoryId &&
-                rackId &&
-                authorId &&
-                ref.current.name.value === ""
-              )
+              categoryId === "" ||
+              rackId === "" ||
+              authorId === "" ||
+              ref.current.name.value === ""
             }
             onClick={createBook}
           >
