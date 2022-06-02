@@ -14,6 +14,7 @@ import ContactPageIcon from "@mui/icons-material/ContactPage";
 import ListIcon from "@mui/icons-material/List";
 import BookDetail from "./pages/BookDetail";
 import Order from "./pages/Order";
+import Borrow from "./pages/Borrow";
 
 if (localStorage.token) {
   setAuthToken(localStorage.token);
@@ -84,7 +85,7 @@ function App() {
                   },
                   {
                     title: "Orders",
-                    itemId: "/book/order",
+                    itemId: "/book/orders",
                   },
                   {
                     title: "Borrows",
@@ -122,7 +123,8 @@ function App() {
             <Route exact path="/book/books" element={<Book />} />
             {/* <Route exact path="/member" element={<Member />} /> */}
             <Route exact path="/account" element={<Auth />} />
-            <Route exact path="/book/order" element={<Order />} />
+            <Route exact path="/book/orders" element={<Order />} />
+            <Route exact path="/book/borrows" element={<Borrow />} />
             <Route exact path="/book/add" element={<BookAdd />} />
             <Route exact path="/book/:id" element={<BookDetail />} />
             {/* <Route

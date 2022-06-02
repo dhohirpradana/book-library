@@ -8,6 +8,7 @@ import {
   Button,
   Collapse,
   IconButton,
+  Stack,
   Table,
   TableBody,
   TableCell,
@@ -15,30 +16,31 @@ import {
   TableHead,
   TableRow,
   TextField,
+  Typography,
 } from "@mui/material";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import { Box } from "@mui/system";
 
-export default function Order() {
-  const [orders, setorders] = useState([]);
+export default function Borrow() {
+  const [borrows, setborrows] = useState([]);
   // const [page, setpage] = useState(0);
   const [inputValue, setInputValue] = useState("");
-  const [filteredOrders, setfilteredOrders] = useState([]);
+  const [filteredBorrows, setfilteredBorrows] = useState([]);
 
   const filter = (value) => {
     setInputValue(value);
-    let filteredOrders = orders.filter(function (currentElement) {
+    let filteredBorrows = borrows.filter(function (currentElement) {
       return (
         currentElement.book.toLowerCase().includes(value.toLowerCase()) ||
         currentElement.user.toLowerCase().includes(value.toLowerCase())
       );
     });
     // console.log(filteredBooks);
-    setfilteredOrders(filteredOrders);
+    setfilteredBorrows(filteredBorrows);
   };
 
-  const approveOrder = (orderId) => {
+  const approveOrder = (borrowId) => {
     graphRequest(
       `
     mutation($id:String!, $input: UpdateOrderInput!) {
@@ -48,57 +50,65 @@ export default function Order() {
       }
     }
     `,
-      { id: orderId, input: { status: "APPROVED" } }
+      { id: borrowId, input: { status: "APPROVED" } }
     ).then((res) => {
-      fetchOrders();
+      fetchBorrows();
       alert("Order Approved");
     });
   };
 
-  const fetchOrders = () => {
-    setorders([]);
-    graphRequest(`query{
-      orders(limit: 5000, skip: 0) {
+  const fetchBorrows = () => {
+    setborrows([]);
+    graphRequest(`
+    query($where: BorrowFilter) {
+      borrows(where: $where, limit: 5000) {
         id
-        user {
+        status
+        book {
+          id
+          name
+          status
+        }
+        user{
           firstName
           lastName
         }
-        book {
-          name
-          code
-          status
-        }
-        status
+        pinaltyDays
+        penalties
         dateStart
         dueDate
       }
     }
     `).then((res) => {
+      console.log(res.data);
       // eslint-disable-next-line array-callback-return
-      res.data.orders.map((order) => {
-        setorders((old) => [
+      res.data.borrows.map((borrow) => {
+        setborrows((old) => [
           ...old,
           createData(
-            order.id,
-            order.book.name,
-            order.book.status,
-            order.user.firstName + " " + order.user.lastName,
-            order.status,
-            prettyDate(order.dateStart),
-            prettyDate(order.dueDate)
+            borrow.id,
+            borrow.book.name,
+            borrow.book.id,
+            borrow.user.firstName + " " + borrow.user.lastName,
+            borrow.status,
+            borrow.pinaltyDays,
+            borrow.penalties,
+            prettyDate(borrow.dateStart),
+            prettyDate(borrow.dueDate)
           ),
         ]);
-        setfilteredOrders((old) => [
+        setfilteredBorrows((old) => [
           ...old,
           createData(
-            order.id,
-            order.book.name,
-            order.book.status,
-            order.user.firstName + " " + order.user.lastName,
-            order.status,
-            prettyDate(order.dateStart),
-            prettyDate(order.dueDate)
+            borrow.id,
+            borrow.book.name,
+            borrow.book.id,
+            borrow.user.firstName + " " + borrow.user.lastName,
+            borrow.status,
+            borrow.pinaltyDays,
+            borrow.penalties,
+            prettyDate(borrow.dateStart),
+            prettyDate(borrow.dueDate)
           ),
         ]);
       });
@@ -108,17 +118,29 @@ export default function Order() {
   const createData = (
     id,
     book,
-    bookStatus,
+    bookId,
     user,
     status,
+    pinaltyDays,
+    penalties,
     dateStart,
     dueDate
   ) => {
-    return { id, book, bookStatus, user, status, dateStart, dueDate };
+    return {
+      id,
+      book,
+      bookId,
+      user,
+      status,
+      pinaltyDays,
+      penalties,
+      dateStart,
+      dueDate,
+    };
   };
 
   useState(() => {
-    fetchOrders();
+    fetchBorrows();
   }, []);
 
   function Row(props) {
@@ -127,7 +149,7 @@ export default function Order() {
 
     return (
       <React.Fragment>
-        <TableRow sx={{ "& > *": { borderBottom: "unset" } }}>
+        <TableRow sx={{ "& > *": { bborrowBottom: "unset" } }}>
           <TableCell>
             <IconButton
               aria-label="expand row"
@@ -140,6 +162,8 @@ export default function Order() {
           <TableCell>{row.book}</TableCell>
           <TableCell>{row.user}</TableCell>
           <TableCell>{row.status}</TableCell>
+          {/* <TableCell>{row.pinaltyDays ?? "none"}</TableCell>
+          <TableCell>{row.penalties ?? "none"}</TableCell> */}
           <TableCell>{row.dateStart}</TableCell>
           <TableCell>{row.dueDate}</TableCell>
         </TableRow>
@@ -147,15 +171,25 @@ export default function Order() {
           <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
             <Collapse in={open} timeout="auto" unmountOnExit>
               <Box sx={{ margin: 1 }}>
+                <Stack mb={2} direction="row" spacing={3}>
+                  <Stack direction="column">
+                    <Typography gutterBottom>Pinalty Days</Typography>
+                    <Typography gutterBottom>{row.pinaltyDays}</Typography>
+                  </Stack>
+                  <Stack direction="column">
+                    <Typography gutterBottom>Penalties</Typography>
+                    <Typography gutterBottom>{row.penalties}</Typography>
+                  </Stack>
+                </Stack>
                 <Button
-                  disabled={
-                    row.status === "APPROVED" || row.bookStatus !== "AVAILABLE"
-                  }
+                  // disabled={
+                  //   row.status === "APPROVED" || row.bookStatus !== "AVAILABLE"
+                  // }
                   variant="contained"
                   size="small"
-                  onClick={() => approveOrder(row.id)}
+                  // onClick={() => approveOrder(row.id)}
                 >
-                  Borrow
+                  Received
                 </Button>
               </Box>
             </Collapse>
@@ -170,6 +204,8 @@ export default function Order() {
       book: PropTypes.string.isRequired,
       user: PropTypes.string.isRequired,
       status: PropTypes.string.isRequired,
+      // pinaltyDays: PropTypes.string.isRequired,
+      // penalties: PropTypes.string.isRequired,
       dateStart: PropTypes.string.isRequired,
       dueDate: PropTypes.string.isRequired,
     }).isRequired,
@@ -187,9 +223,9 @@ export default function Order() {
           filter(newInputValue);
         }}
         options={[
-          ...orders.map((order) => order.book),
-          ...orders.map((order) => order.user),
-          ...orders.map((order) => order.id),
+          ...borrows.map((borrow) => borrow.book),
+          ...borrows.map((borrow) => borrow.user),
+          ...borrows.map((borrow) => borrow.id),
         ]}
         sx={{ width: "30vw", pb: 2 }}
         renderInput={(params) => <TextField {...params} label="Search" />}
@@ -205,12 +241,14 @@ export default function Order() {
               <TableCell>Book Name</TableCell>
               <TableCell>User Name</TableCell>
               <TableCell>Status</TableCell>
+              {/* <TableCell>Pinalty Days</TableCell>
+              <TableCell>Penalties</TableCell> */}
               <TableCell>Start</TableCell>
               <TableCell>Due</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {filteredOrders.map((row) => (
+            {filteredBorrows.map((row) => (
               <Row key={row.id} row={row} />
             ))}
           </TableBody>

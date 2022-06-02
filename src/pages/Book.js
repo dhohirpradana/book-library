@@ -33,8 +33,6 @@ export default function Book() {
   }, []);
 
   const fetchBooks = () => {
-    setbooks([]);
-    setfilteredBooks([]);
     graphRequest(`{
       books {
         id
@@ -54,6 +52,8 @@ export default function Book() {
       }
     }`)
       .then((res) => {
+        setbooks([]);
+        setfilteredBooks([]);
         // eslint-disable-next-line array-callback-return
         res.data.books.map((book) => {
           setbooks((old) => [
