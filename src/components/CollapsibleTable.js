@@ -19,7 +19,7 @@ import { Button, Modal, Stack } from "@mui/material";
 import ReactDatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { UserContext } from "../contexts/user";
-import orderValidation from "../helpers/orderValidation";
+import bookOrder from "../helpers/bookOrder";
 
 export default function CollapsibleTable({ books }) {
   // eslint-disable-next-line no-unused-vars
@@ -28,7 +28,6 @@ export default function CollapsibleTable({ books }) {
   function OrderModal({ bookId, bookName, startD, status }) {
     var dateM = !startD ? new Date() : new Date(startD.dueDate);
     dateM.setDate(dateM.getDate() + 1);
-
     const [open, setOpen] = useState(false);
     const [startDate, setStartDate] = useState(dateM);
     const [dueDate, setDueDate] = useState(dateM);
@@ -36,7 +35,8 @@ export default function CollapsibleTable({ books }) {
     useEffect(() => {}, []);
 
     const orderBook = () => {
-      orderValidation(userContext.user.id, startDate, dueDate, bookId);
+      bookOrder(userContext.user.id, startDate, dueDate, bookId);
+      setOpen(false);
     };
     const style = {
       position: "absolute",
