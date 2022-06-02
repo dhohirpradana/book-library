@@ -186,11 +186,13 @@ export default function Order() {
         onInputChange={(event, newInputValue) => {
           filter(newInputValue);
         }}
-        options={[
-          ...orders.map((order) => order.book),
-          ...orders.map((order) => order.user),
-          ...orders.map((order) => order.id),
-        ]}
+        options={
+          [
+            // ...orders.map((order) => order.book),
+            // ...orders.map((order) => order.user),
+            // ...orders.map((order) => order.id),
+          ]
+        }
         sx={{ width: "30vw", pb: 2 }}
         renderInput={(params) => <TextField {...params} label="Search" />}
       />
