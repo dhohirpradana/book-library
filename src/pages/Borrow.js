@@ -40,28 +40,66 @@ export default function Borrow() {
     setfilteredBorrows(filteredBorrows);
   };
 
-  const approveOrder = (borrowId) => {
+  const receiveBook = (
+    borrowId,
+    status,
+    pinaltyDays,
+    penalties,
+    returnDate,
+    bookId
+  ) => {
     graphRequest(
-      `
-    mutation($id:String!, $input: UpdateOrderInput!) {
-      updateOrder(id:$id, input:$input) {
-        id
-        status
+      `mutation($input: UpdateBorrowInput!, $id: String!) {
+        updateBorrow(input: $input, id: $id) {
+          status
+          returnDate
+          book {
+            id
+            status
+          }
+        }
       }
-    }
+      
     `,
-      { id: borrowId, input: { status: "APPROVED" } }
+      {
+        id: borrowId,
+        input: {
+          status,
+          pinaltyDays,
+          penalties,
+          returnDate,
+        },
+      }
     ).then((res) => {
-      fetchBorrows();
-      alert("Order Approved");
+      // fetchBorrows();
+      window.location.reload();
+      graphRequest(
+        `
+      mutation($id: String!, $input: UpdateBookInput!) {
+        updateBook(id: $id, input: $input) {
+          name
+          status
+        }
+      }
+      `,
+        {
+          id: bookId,
+          input: {
+            status: "AVAILABLE",
+          },
+        }
+      ).then((res) => {
+        alert("Book Received\nStatus: " + status);
+      });
     });
   };
 
   const fetchBorrows = () => {
     setborrows([]);
-    graphRequest(`
-    query($where: BorrowFilter) {
-      borrows(where: $where, limit: 5000) {
+    graphRequest(
+      `
+    query($where: BorrowFilter, $orderBy: BorrowOrderBy) {
+      borrows(where: $where, limit: 5000, orderBy: $orderBy) {
         id
         status
         book {
@@ -69,7 +107,7 @@ export default function Borrow() {
           name
           status
         }
-        user{
+        user {
           firstName
           lastName
         }
@@ -79,8 +117,10 @@ export default function Borrow() {
         dueDate
       }
     }
-    `).then((res) => {
-      console.log(res.data);
+    `,
+      { orderBy: "createdAt_DESC", where: { status: "BORROWED" } }
+    ).then((res) => {
+      // console.log(res.data);
       // eslint-disable-next-line array-callback-return
       res.data.borrows.map((borrow) => {
         setborrows((old) => [
@@ -145,7 +185,14 @@ export default function Borrow() {
 
   function Row(props) {
     const { row } = props;
-    const [open, setOpen] = React.useState(false);
+    const [open, setOpen] = useState(false);
+
+    const date1 = new Date(row.dueDate);
+    const date2 = new Date();
+    const diffTime = date2.getDate() - date1.getDate();
+
+    let pinaltyDays = diffTime > 0 ? diffTime : 0;
+    let penalties = diffTime > 0 ? diffTime * 5000 : 0;
 
     return (
       <React.Fragment>
@@ -174,22 +221,31 @@ export default function Borrow() {
                 <Stack mb={2} direction="row" spacing={3}>
                   <Stack direction="column">
                     <Typography gutterBottom>Pinalty Days</Typography>
-                    <Typography gutterBottom>{row.pinaltyDays}</Typography>
+                    <Typography gutterBottom>{pinaltyDays}</Typography>
                   </Stack>
                   <Stack direction="column">
                     <Typography gutterBottom>Penalties</Typography>
-                    <Typography gutterBottom>{row.penalties}</Typography>
+                    <Typography gutterBottom>{penalties}</Typography>
                   </Stack>
                 </Stack>
                 <Button
                   // disabled={
-                  //   row.status === "APPROVED" || row.bookStatus !== "AVAILABLE"
+                  //   row.status === "OVER_DUE" || row.status === "ON_TIME"
                   // }
                   variant="contained"
                   size="small"
-                  // onClick={() => approveOrder(row.id)}
+                  onClick={() =>
+                    receiveBook(
+                      row.id,
+                      pinaltyDays === 0 ? "ON_TIME" : "OVER_DUE",
+                      pinaltyDays,
+                      penalties,
+                      new Date(),
+                      row.bookId
+                    )
+                  }
                 >
-                  Received
+                  Receive Book
                 </Button>
               </Box>
             </Collapse>
@@ -214,6 +270,7 @@ export default function Borrow() {
   return (
     <>
       <Autocomplete
+        groupBy={(option) => option.user}
         freeSolo
         size="small"
         disablePortal
@@ -222,11 +279,7 @@ export default function Borrow() {
         onInputChange={(event, newInputValue) => {
           filter(newInputValue);
         }}
-        options={[
-          ...borrows.map((borrow) => borrow.book),
-          ...borrows.map((borrow) => borrow.user),
-          ...borrows.map((borrow) => borrow.id),
-        ]}
+        options={[]}
         sx={{ width: "30vw", pb: 2 }}
         renderInput={(params) => <TextField {...params} label="Search" />}
       />
