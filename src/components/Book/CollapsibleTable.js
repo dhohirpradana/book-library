@@ -13,20 +13,19 @@ import Typography from "@mui/material/Typography";
 import Paper from "@mui/material/Paper";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
-import { graphRequest } from "../configs/api";
-import prettyDate from "../constants/prettyDate";
+import { graphRequest } from "../../configs/api";
+import prettyDate from "../../constants/prettyDate";
 import { Button, Modal, Stack } from "@mui/material";
 import ReactDatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import { UserContext } from "../contexts/user";
-import bookOrder from "../helpers/bookOrder";
+import { UserContext } from "../../contexts/user";
+import bookOrder from "../../helpers/bookOrder";
 
 export default function CollapsibleTable({ books }) {
   // eslint-disable-next-line no-unused-vars
   const [userContext, userDispatch] = useContext(UserContext);
 
   function OrderModal({ bookId, bookName, dueD, status }) {
-    console.log(dueD);
     var dateM = !dueD ? new Date() : new Date(dueD);
     dateM.setDate(dateM.getDate() + 1);
     const [open, setOpen] = useState(false);
@@ -37,7 +36,7 @@ export default function CollapsibleTable({ books }) {
 
     const orderBook = () => {
       bookOrder(userContext.user.id, startDate, dueDate, bookId);
-      setOpen(false);
+      // setOpen(false);
     };
     const style = {
       position: "absolute",
@@ -150,13 +149,42 @@ export default function CollapsibleTable({ books }) {
             // dueDate_gte: new Date(),
             status: "PENDING",
           },
-          orderBy: "createdAt_DESC",
+          orderBy: "dueDate_DESC",
         }
       ).then((res) => {
-        // console.log(row.id);
-        // console.log(res.data);
-        setloadOrders(false);
         setOrders(res.data.orders);
+        graphRequest(
+          `query($where: BorrowFilter, $orderBy: BorrowOrderBy) {
+          borrows(where: $where, limit: 1, orderBy: $orderBy) {
+            id
+            status
+            book {
+              id
+              name
+            }
+            user {
+              firstName
+            }
+            pinaltyDays
+            penalties
+            dateStart
+            dueDate
+            returnDate
+          }
+        }        
+        `,
+          {
+            orderBy: "dueDate_DESC",
+            where: {
+              bookId: row.id,
+              status: "BORROWED",
+            },
+          }
+        ).then((res) => {
+          console.log(res.data.borrows);
+          setOrders((old) => [...res.data.borrows, ...old]);
+          setloadOrders(false);
+        });
       });
     };
 

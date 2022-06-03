@@ -2,7 +2,7 @@ import { Autocomplete, Button, Paper, Stack, TextField } from "@mui/material";
 import { useContext, useEffect, useState } from "react";
 import { graphRequest } from "../configs/api";
 import { useNavigate } from "react-router-dom";
-import CollapsibleTable from "../components/CollapsibleTable";
+import CollapsibleTable from "../components/Book/CollapsibleTable";
 import { UserContext } from "../contexts/user";
 
 export default function Book() {

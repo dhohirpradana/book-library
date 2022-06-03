@@ -2,7 +2,10 @@ import { graphRequest } from "../configs/api";
 import createdAtFormat from "../constants/createdAtFormat";
 
 export default function bookOrder(userId, start, due, bookId) {
-  // console.log(userId);
+  console.log(userId);
+  console.log(bookId);
+  console.log(start);
+  console.log(due);
   // console.log(createAtFormat(new Date()));
   start.setHours(0, 0, 0, 0);
   due.setHours(23, 59, 59, 0);
@@ -35,8 +38,8 @@ export default function bookOrder(userId, start, due, bookId) {
       );
     graphRequest(
       `
-    query($where: OrderFilter, $orderBy: OrderOrderBy) {
-      orders(where: $where, orderBy: $orderBy) {
+    query($where: BorrowFilter, $orderBy: BorrowOrderBy) {
+      borrows(where: $where, orderBy: $orderBy) {
         id
         user {
           firstName
@@ -55,13 +58,14 @@ export default function bookOrder(userId, start, due, bookId) {
         where: {
           userId,
           bookId,
-          dueDate_gte: start,
+          status: "BORROWED",
+          dueDate_lte: start,
         },
       }
     ).then((res) => {
       // console.log(userId, bookId, start, due);
-      console.log("Book order at same time: ", res.data.orders.length);
-      if (res.data.orders.length > 0)
+      console.log("Book order at same time: ", res.data.borrows.length);
+      if (res.data.borrows.length > 0)
         return alert("Unable to order this book at same time!");
       graphRequest(
         `query($where: BorrowFilter) {
@@ -70,7 +74,7 @@ export default function bookOrder(userId, start, due, bookId) {
           }
         }         
         `,
-        { where: { userId } }
+        { where: { userId, status: "BORROWED" } }
       ).then((res) => {
         // console.log("borrows", res.data.borrows.length);
         if (res.data.borrows.length >= max)
@@ -78,22 +82,56 @@ export default function bookOrder(userId, start, due, bookId) {
             "Limit borrow reached!\nYour borrows: " + res.data.borrows.length
           );
         graphRequest(
-          `mutation($input: CreateOrderInput!) {
-          createOrder(input: $input){
-            status
-          }
-        }
-        `,
+          `
+          query($where: OrderFilter, $orderBy: OrderOrderBy) {
+            orders(where: $where, orderBy: $orderBy) {
+              id
+              user {
+                firstName
+              }
+              book {
+                id
+                code
+                name
+              }
+              status
+              dateStart
+              dueDate
+            }
+          }`,
           {
-            input: {
-              dateStart: start,
-              dueDate: due,
-              bookId: bookId,
+            where: {
+              userId,
+              bookId,
+              status: "PENDING",
+              dueDate_lte: start,
             },
           }
         ).then((res) => {
-          window.location.reload();
-          alert("Order Successfully");
+          console.log("Book order at same time: ", res.data.orders.length);
+          if (res.data.orders.length > 0)
+            return alert("You already have an order for this book!");
+          graphRequest(
+            `mutation($input: CreateOrderInput!) {
+            createOrder(input: $input){
+              status
+            }
+          }
+          `,
+            {
+              input: {
+                dateStart: start,
+                dueDate: due,
+                bookId,
+              },
+            }
+          ).then((res) => {
+            console.log(res.data);
+            if (res.data.createOrder == null)
+              return alert("You cannot order more than 3 books at same time!");
+            window.location.reload();
+            alert("Order Successfully");
+          });
         });
       });
     });

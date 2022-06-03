@@ -45,8 +45,7 @@ export default function Borrow() {
     status,
     pinaltyDays,
     penalties,
-    returnDate,
-    bookId
+    returnDate
   ) => {
     graphRequest(
       `mutation($input: UpdateBorrowInput!, $id: String!) {
@@ -72,25 +71,9 @@ export default function Borrow() {
       }
     ).then((res) => {
       // fetchBorrows();
-      graphRequest(
-        `
-      mutation($id: String!, $input: UpdateBookInput!) {
-        updateBook(id: $id, input: $input) {
-          name
-          status
-        }
-      }
-      `,
-        {
-          id: bookId,
-          input: {
-            status: "AVAILABLE",
-          },
-        }
-      ).then((res) => {
-        window.location.reload();
-        alert("Book Received\nStatus: " + status);
-      });
+      console.log(res.data);
+      window.location.reload();
+      alert("Book Received\nStatus: " + status);
     });
   };
 
@@ -234,16 +217,15 @@ export default function Borrow() {
                   // }
                   variant="contained"
                   size="small"
-                  onClick={() =>
+                  onClick={() => {
                     receiveBook(
                       row.id,
                       pinaltyDays === 0 ? "ON_TIME" : "OVER_DUE",
                       pinaltyDays,
                       penalties,
-                      new Date(),
-                      row.bookId
-                    )
-                  }
+                      new Date()
+                    );
+                  }}
                 >
                   Receive Book
                 </Button>

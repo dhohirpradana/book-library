@@ -1,62 +1,39 @@
 import {
-  Alert,
   Button,
   Divider,
-  FormControl,
-  FormHelperText,
   Paper,
   Stack,
-  TextField,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
   Typography,
 } from "@mui/material";
-import React, { useContext, useEffect, useRef, useState } from "react";
-import { graphRequest } from "../configs/api";
+import React, { useContext, useEffect, useState } from "react";
+import Login from "../components/Auth/Login";
+import { graphRequestHistory } from "../configs/api";
 import { UserContext } from "../contexts/user";
 
 export default function Auth() {
-  const loginReff = useRef();
+  const [orders, setOrders] = useState([]);
+  const [borrows, setBorrows] = useState([]);
   const [userContext, userDispatch] = useContext(UserContext);
-  const [error, seterror] = useState("");
 
-  const handleLogin = () => {
-    seterror(null);
-    graphRequest(
-      `mutation($input: LoginInput) {
-      login(input: $input) {
-        token
-        user {
-          id
-          firstName
-          lastName
-          phoneNumber
-          verify
-          role
-          email
-        }
-      }
-    }`,
-      {
-        input: {
-          email: loginReff.current.email.value,
-          password: loginReff.current.password.value,
-        },
-      }
-    ).then((res) => {
-      if (!res.data.login) {
-        seterror("Invalid email or password!");
-        return userDispatch({
-          type: "AUTH_ERROR",
-        });
-      }
-      let payload = res.data.login;
-      console.log(res.data.login.user.role);
-      userDispatch({
-        type: "AUTH_SUCCESS",
-        payload,
-      });
-      // window.location.reload();
+  const fetchHistory = () => {
+    setBorrows([]);
+    setOrders([]);
+    graphRequestHistory(userContext.user.id).then((res) => {
+      setBorrows(res.borrows);
+      setOrders(res.orders);
     });
   };
+
+  useEffect(() => {
+    if (userContext.user.id) fetchHistory();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userContext.user.id]);
 
   const handleLogout = () => {
     userDispatch({
@@ -64,45 +41,10 @@ export default function Auth() {
     });
   };
 
-  useEffect(() => {
-    // console.log(userContext.user);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   return (
     <div>
       {!userContext.isLogin ? (
-        <Paper sx={{ p: 2 }} elevation={3}>
-          <form ref={loginReff}>
-            {error ? (
-              <Alert sx={{ mb: 3 }} severity="error">
-                {error}
-              </Alert>
-            ) : (
-              <></>
-            )}
-            <Stack>
-              <FormControl sx={{ mb: 1 }}>
-                <TextField id="email" label="Email" defaultValue="" />
-                <FormHelperText id="my-helper-text">
-                  We'll never share your email.
-                </FormHelperText>
-              </FormControl>
-              <FormControl sx={{ mb: 3 }}>
-                <TextField
-                  id="password"
-                  label="Password"
-                  type="password"
-                  defaultValue=""
-                />
-                <FormHelperText id="my-helper-text"></FormHelperText>
-              </FormControl>
-              <Button variant="contained" onClick={handleLogin}>
-                Login
-              </Button>
-            </Stack>
-          </form>
-        </Paper>
+        <Login />
       ) : (
         <Stack>
           <Typography gutterBottom>
@@ -122,6 +64,66 @@ export default function Auth() {
           <Button variant="contained" color="error" onClick={handleLogout}>
             Logout
           </Button>
+          <Typography mt={2} mb={2}>
+            Order History
+          </Typography>
+          <TableContainer component={Paper}>
+            <Table sx={{ minWidth: 650 }} aria-label="simple table">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Book Name</TableCell>
+                  <TableCell>Start</TableCell>
+                  <TableCell>Due</TableCell>
+                  <TableCell>Status</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {orders.map((row) => (
+                  <TableRow
+                    key={row.id}
+                    sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
+                  >
+                    <TableCell component="th" scope="row">
+                      {row.book.name}
+                    </TableCell>
+                    <TableCell>{row.dateStart}</TableCell>
+                    <TableCell>{row.dueDate}</TableCell>
+                    <TableCell>{row.status}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+          <Typography mt={2} mb={2}>
+            Borrow History
+          </Typography>
+          <TableContainer component={Paper}>
+            <Table sx={{ minWidth: 650 }} aria-label="simple table">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Book Name</TableCell>
+                  <TableCell>Start</TableCell>
+                  <TableCell>Due</TableCell>
+                  <TableCell>Status</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {borrows.map((row) => (
+                  <TableRow
+                    key={row.id}
+                    sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
+                  >
+                    <TableCell component="th" scope="row">
+                      {row.book.name}
+                    </TableCell>
+                    <TableCell>{row.dateStart}</TableCell>
+                    <TableCell>{row.dueDate}</TableCell>
+                    <TableCell>{row.status}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
         </Stack>
       )}
     </div>

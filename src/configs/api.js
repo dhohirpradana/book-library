@@ -31,6 +31,32 @@ export const graphRequest = function (query, variables) {
   });
 };
 
+export const graphRequestHistory = function (userId) {
+  console.log("history: ", userId);
+  return new Promise(function (resolve, reject) {
+    const config = {
+      method: "GET",
+      headers: {
+        "Content-type": "application/json",
+      },
+    };
+
+    axios
+      .create({
+        baseURL: "https://dev-libraryzyhwf.microgen.id/api/history",
+      })
+      .get("/" + userId, config)
+      .then((response) => {
+        // console.log(response);
+        resolve(response.data);
+      })
+      .catch((error) => {
+        console.log(error);
+        reject(error);
+      });
+  });
+};
+
 export const setAuthToken = (token) => {
   if (token) {
     API.defaults.headers.common["Authorization"] = `Bearer ${token}`;
